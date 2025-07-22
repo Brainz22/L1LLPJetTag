@@ -15,19 +15,19 @@ jobs:
         with:
           miniforge-variant: Miniforge3
           environment-file: environment.yml
-          activate-environment: SampleProject
+          activate-environment: L1LLPJetTagger
           use-mamba: true
           auto-activate-base: false
           channel-priority: strict
 
       - name: Run tests
-        run: conda run -n SampleProject pytest
+        run: conda run -n L1LLPJetTagger pytest
 
       - name: Check Ruff version
-        run: conda run -n SampleProject ruff --version
+        run: conda run -n L1LLPJetTagger ruff --version
 
       - name: Lint with Ruff
-        run: conda run -n SampleProject ruff check .
+        run: conda run -n L1LLPJetTagger ruff check .
 
       - name: Format check with Black
-        run: conda run -n SampleProject black --check --diff .
+        run: conda run -n L1LLPJetTagger black --check --diff .

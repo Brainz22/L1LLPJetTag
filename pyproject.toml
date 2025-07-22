@@ -3,7 +3,7 @@ requires = ["setuptools>=61"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "SampleProject"
+name = "L1LLPJetTagger"
 version = "0.1.0"
 description = "A sample project"
 authors = [{ name = "Daniel Diaz", email = "d4diaz@ucsd.edu" }]

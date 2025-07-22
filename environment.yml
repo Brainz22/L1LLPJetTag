@@ -1,4 +1,4 @@
-name: SampleProject
+name: L1LLPJetTagger
 channels:
   - conda-forge
 dependencies:

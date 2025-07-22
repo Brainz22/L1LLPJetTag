@@ -1,4 +1,4 @@
-from SampleProject.core import add
+from L1LLPJetTagger.core import add
 
 
 def test_add():
