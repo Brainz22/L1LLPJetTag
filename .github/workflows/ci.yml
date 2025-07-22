@@ -1,0 +1,33 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Conda environment
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          miniforge-variant: Miniforge3
+          environment-file: environment.yml
+          activate-environment: SampleProject
+          use-mamba: true
+          auto-activate-base: false
+          channel-priority: strict
+
+      - name: Run tests
+        run: conda run -n SampleProject pytest
+
+      - name: Check Ruff version
+        run: conda run -n SampleProject ruff --version
+
+      - name: Lint with Ruff
+        run: conda run -n SampleProject ruff check .
+
+      - name: Format check with Black
+        run: conda run -n SampleProject black --check --diff .
