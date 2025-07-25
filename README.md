@@ -8,7 +8,7 @@ Example Python project structure with CI and conda environment.
 
 # Create and activate environment
 micromamba create -f environment.yml
-micromamba activate sampleproject
+micromamba activate L1LLPJetTagger
 
 
 # once per environment setup
