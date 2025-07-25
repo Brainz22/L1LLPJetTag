@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=61"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 name = "L1LLPJetTagger"
@@ -8,12 +8,6 @@ version = "0.1.0"
 description = "A sample project"
 authors = [{ name = "Daniel Diaz", email = "d4diaz@ucsd.edu" }]
 dependencies = []
-
-[tool.setuptools.packages.find]
-where = ["src"]
-
-[tool.setuptools.package-dir]
-"" = "src"
 
 [tool.black]
 line-length = 88
