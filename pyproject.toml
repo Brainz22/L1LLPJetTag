@@ -1,6 +1,6 @@
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "L1LLPJetTagger"
@@ -15,9 +15,8 @@ test = [
   "pytest-cov>=3"
 ]
 
-[tool.hatch]
-version.path = "src/L1LLPJetTagger/__init__.py"
-envs.default.dependencies = ["pytest", "pytest-cov"]
+[tool.setuptools]
+packages = { find = { where = ["src"] } }
 
 [tool.black]
 line-length = 88
