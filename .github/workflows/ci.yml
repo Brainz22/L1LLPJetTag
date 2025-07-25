@@ -20,6 +20,9 @@ jobs:
           auto-activate-base: false
           channel-priority: strict
 
+      - name: Install package & tests
+        run: conda run -n L1LLPJetTagger pip install ".[test]"
+
       - name: Run tests
         run: conda run -n L1LLPJetTagger pytest
 
