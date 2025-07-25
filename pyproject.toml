@@ -15,6 +15,9 @@ path = "src/L1LLPJetTagger/__init__.py"
 [tool.hatch.build.targets.wheel]
 packages = ["src/L1LLPJetTagger"]
 
+[tool.hatch.build.targets.sdist]
+include = ["src/L1LLPJetTagger", "tests"]
+
 [tool.black]
 line-length = 88
 target-version = ['py310']
