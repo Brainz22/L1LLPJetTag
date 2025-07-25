@@ -2,6 +2,10 @@ name: L1LLPJetTagger
 channels:
   - conda-forge
 dependencies:
+  - uproot
+  - awkward
+  - pandas
+  - ipykernel
   - python=3.10
   - numpy=1.24
   - pytest
