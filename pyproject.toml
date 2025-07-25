@@ -9,9 +9,11 @@ description = "A sample project"
 authors = [{ name = "Daniel Diaz", email = "d4diaz@ucsd.edu" }]
 dependencies = []
 
-[tool.setuptools]
-packages = { find = { where = ["src"] } }
-package-dir = { "" = "src" }
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-dir]
+"" = "src"
 
 [tool.black]
 line-length = 88
