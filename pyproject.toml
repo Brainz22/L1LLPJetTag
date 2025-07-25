@@ -9,6 +9,9 @@ description = "A sample project"
 authors = [{ name = "Daniel Diaz", email = "d4diaz@ucsd.edu" }]
 dependencies = []
 
+[tool.hatch.version]
+path = "src/L1LLPJetTagger/__init__.py"
+
 [tool.black]
 line-length = 88
 target-version = ['py310']
