@@ -15,8 +15,9 @@ test = [
   "pytest-cov>=3"
 ]
 
-[tool.hatch.version]
-path = "src/L1LLPJetTagger/__init__.py"
+[tool.hatch]
+version.path = "src/L1LLPJetTagger/__init__.py"
+envs.default.dependencies = ["pytest", "pytest-cov"]
 
 [tool.black]
 line-length = 88
