@@ -9,15 +9,14 @@ description = "A sample project"
 authors = [{ name = "Daniel Diaz", email = "d4diaz@ucsd.edu" }]
 dependencies = []
 
+[project.optional-dependencies]
+test = [
+  "pytest>=6",
+  "pytest-cov>=3"
+]
+
 [tool.hatch.version]
 path = "src/L1LLPJetTagger/__init__.py"
-
-[tool.hatch.build.targets.wheel]
-packages = ["src/L1LLPJetTagger"]
-sources = { "src" = "" }
-
-[tool.hatch.build.targets.sdist]
-include = ["src/L1LLPJetTagger", "tests"]
 
 [tool.black]
 line-length = 88
