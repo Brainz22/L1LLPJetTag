@@ -4,6 +4,8 @@ channels:
 dependencies:
   - uproot
   - coffea>=2024.4.0
+  - hist>=2.6.0
+  - boost-histogram
   - awkward>=2.6.0
   - pandas
   - ipykernel
