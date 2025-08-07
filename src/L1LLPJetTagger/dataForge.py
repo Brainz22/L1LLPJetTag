@@ -1,3 +1,5 @@
+from L1LLPJetTagger.utils.utils import one_hot_encode_pdgid
+from L1LLPJetTagger.utils.utils import known_ids
 from coffea.nanoevents import NanoEventsFactory, BaseSchema
 import awkward as ak
 import h5py
@@ -15,6 +17,7 @@ def debug_print(events):
         pt = ak.to_list(events["jet_pt"][i])
         eta = ak.to_list(events["jet_eta"][i])
         phi = ak.to_list(events["jet_phi"][i])
+        pid = ak.to_list(events["jet_pfcand_id"][i])
         vx = ak.to_list(events["jet_pfcand_track_vx"][i])
         vy = ak.to_list(events["jet_pfcand_track_vy"][i])
         vz = ak.to_list(events["jet_pfcand_track_vz"][i])
@@ -26,6 +29,7 @@ def debug_print(events):
         print(f"  phi: {phi:.2f}")
         print(f"  nPFCand: {len(vx)}")
         print(f"  track_vx: {vx[:]}")
+        print(f"  pfCand_ID: {pid[:]}")
         print(f"  track_vy: {vy[:]}")
         print(f"  track_vz: {vz[:]}")
         print(f"  track_dxy: {dxy[:]}")
@@ -61,18 +65,23 @@ def forge_h5(
     debug_print(events)
 
     # Pad to fixed length 10 per jet
+    pid = ak.pad_none(events["jet_pfcand_id"], 10, clip=True)
     vx = ak.pad_none(events["jet_pfcand_track_vx"], 10, clip=True)
     vy = ak.pad_none(events["jet_pfcand_track_vy"], 10, clip=True)
     vz = ak.pad_none(events["jet_pfcand_track_vz"], 10, clip=True)
 
     # Replace None with 0.0
+    pid = ak.fill_none(pid, 0.0)
     vx = ak.fill_none(vx, 0.0)
     vy = ak.fill_none(vy, 0.0)
     vz = ak.fill_none(vz, 0.0)
 
+    flat_pid = ak.to_numpy(pid).reshape(-1)
+    one_hot = one_hot_encode_pdgid(flat_pid)
+    one_hot = one_hot.reshape(len(pid), 10, len(known_ids))
     # shape: (n_jets, n_cands,n_features)
     constituents = ak.concatenate(
-        [vx[..., None], vy[..., None], vz[..., None]], axis=-1
+        [one_hot, vx[..., None], vy[..., None], vz[..., None]], axis=-1
     )
     # Reshape to (n_jets, n_cands * n_features)
     flat = ak.to_numpy(constituents).reshape(len(vx), -1)
