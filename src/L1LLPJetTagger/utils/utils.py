@@ -1,3 +1,4 @@
+import h5py
 import numpy as np
 import awkward as ak
 
@@ -37,3 +38,9 @@ def pad_and_fill(array, target_len, fill_value=0.0):
     - processed awkward array
     """
     return ak.fill_none(ak.pad_none(array, target_len, clip=True), fill_value)
+
+
+def load_h5_data(file_path, dataset_name):
+    with h5py.File(file_path, "r") as f:
+        data = f[dataset_name][:]
+    return data
