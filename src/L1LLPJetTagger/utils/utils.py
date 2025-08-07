@@ -1,4 +1,5 @@
 import numpy as np
+import awkward as ak
 
 known_ids = [11, -11, 13, -13, 22, 130, 211, -211]
 
@@ -21,3 +22,18 @@ def one_hot_encode_pdgid(pdg_ids: np.ndarray) -> np.ndarray:
         if pid in mapping:
             one_hot[i, mapping[pid]] = 1.0
     return one_hot
+
+
+def pad_and_fill(array, target_len, fill_value=0.0):
+    """
+    Pads each sublist in `array` to `target_len` and fills None with `fill_value`.
+
+    Parameters:
+    - array: awkward array
+    - target_len: int, number of elements to pad to
+    - fill_value: value to replace None with (default: 0.0)
+
+    Returns:
+    - processed awkward array
+    """
+    return ak.fill_none(ak.pad_none(array, target_len, clip=True), fill_value)

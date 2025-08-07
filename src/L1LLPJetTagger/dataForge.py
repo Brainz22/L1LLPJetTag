@@ -1,4 +1,5 @@
 from L1LLPJetTagger.utils.utils import one_hot_encode_pdgid
+from L1LLPJetTagger.utils.utils import pad_and_fill
 from L1LLPJetTagger.utils.utils import known_ids
 from L1LLPJetTagger.utils.config import config
 from coffea.nanoevents import NanoEventsFactory, BaseSchema
@@ -44,6 +45,7 @@ def forge_h5(
     root_path: str,
     out_path: str,
     tree_name: str,
+    num_constituents: int = 10,
 ):
     """
     Processes a ROOT file containing jet and constituent information and saves the output in HDF5 format.
@@ -69,21 +71,17 @@ def forge_h5(
     # Debug print to show first 5 jets
     debug_print(events)
 
-    # Pad to fixed length 10 per jet
-    pid = ak.pad_none(events["jet_pfcand_id"], 10, clip=True)
-    vx = ak.pad_none(events["jet_pfcand_track_vx"], 10, clip=True)
-    vy = ak.pad_none(events["jet_pfcand_track_vy"], 10, clip=True)
-    vz = ak.pad_none(events["jet_pfcand_track_vz"], 10, clip=True)
+    # Pad to fixed length num_constituents per jet using 0 (NJets, NConstituents)
+    pid = pad_and_fill(events["jet_pfcand_id"], num_constituents)
+    vx = pad_and_fill(events["jet_pfcand_track_vx"], num_constituents)
+    vy = pad_and_fill(events["jet_pfcand_track_vy"], num_constituents)
+    vz = pad_and_fill(events["jet_pfcand_track_vz"], num_constituents)
 
-    # Replace None with 0.0
-    pid = ak.fill_none(pid, 0.0)
-    vx = ak.fill_none(vx, 0.0)
-    vy = ak.fill_none(vy, 0.0)
-    vz = ak.fill_none(vz, 0.0)
-
+    # massage the pid array to be flat and do the one-hot encoding
     flat_pid = ak.to_numpy(pid).reshape(-1)
     one_hot = one_hot_encode_pdgid(flat_pid)
-    one_hot = one_hot.reshape(len(pid), 10, len(known_ids))
+    one_hot = one_hot.reshape(len(pid), num_constituents, len(known_ids))
+
     # shape: (n_jets, n_cands,n_features)
     constituents = ak.concatenate(
         [one_hot, vx[..., None], vy[..., None], vz[..., None]], axis=-1
