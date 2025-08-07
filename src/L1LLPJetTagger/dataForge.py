@@ -1,5 +1,6 @@
 from L1LLPJetTagger.utils.utils import one_hot_encode_pdgid
 from L1LLPJetTagger.utils.utils import known_ids
+from L1LLPJetTagger.utils.config import config
 from coffea.nanoevents import NanoEventsFactory, BaseSchema
 import awkward as ak
 import h5py
@@ -12,8 +13,8 @@ def debug_print(events):
     for field in events.fields:
         print(f" - {field}: {ak.type(events[field])}")
 
-    print("\nFirst 10 jets:")
-    for i in range(min(10, len(events["jet_pt"]))):
+    print("\nFirst 5 jets:")
+    for i in range(min(5, len(events["jet_pt"]))):
         pt = ak.to_list(events["jet_pt"][i])
         eta = ak.to_list(events["jet_eta"][i])
         phi = ak.to_list(events["jet_phi"][i])
@@ -33,6 +34,10 @@ def debug_print(events):
         print(f"  track_vy: {vy[:]}")
         print(f"  track_vz: {vz[:]}")
         print(f"  track_dxy: {dxy[:]}")
+
+    print("\nConfig paths:")
+    print(f"  pkgdir: {config.PKG_ROOT}")
+    print(f"  projdir: {config.PROJECT_ROOT}")
 
 
 def forge_h5(
@@ -61,7 +66,7 @@ def forge_h5(
         f"{root_path}:{tree_name}", schemaclass=BaseSchema
     ).events()
 
-    # Debug print to show first 10 jets
+    # Debug print to show first 5 jets
     debug_print(events)
 
     # Pad to fixed length 10 per jet
