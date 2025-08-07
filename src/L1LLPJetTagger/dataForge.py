@@ -1,3 +1,5 @@
+from L1LLPJetTagger import delta_phi
+import numpy as np
 from L1LLPJetTagger.utils.utils import one_hot_encode_pdgid
 from L1LLPJetTagger.utils.utils import pad_and_fill
 from L1LLPJetTagger.utils.utils import known_ids
@@ -7,19 +9,24 @@ import awkward as ak
 import h5py
 import os
 
+DEBUG = False
 
-def debug_print(events):
+
+def debug_print(events, num_jets=5):
 
     print("\nLoaded fields:")
     for field in events.fields:
         print(f" - {field}: {ak.type(events[field])}")
 
-    print("\nFirst 5 jets:")
-    for i in range(min(5, len(events["jet_pt"]))):
+    print("\nFirst {} jets:".format(num_jets))
+    for i in range(min(num_jets, len(events["jet_pt"]))):
         pt = ak.to_list(events["jet_pt"][i])
         eta = ak.to_list(events["jet_eta"][i])
         phi = ak.to_list(events["jet_phi"][i])
         pid = ak.to_list(events["jet_pfcand_id"][i])
+        cand_pt = ak.to_list(events["jet_pfcand_pt_phys"][i])
+        cand_eta = ak.to_list(events["jet_pfcand_eta_phys"][i])
+        cand_phi = ak.to_list(events["jet_pfcand_phi_phys"][i])
         vx = ak.to_list(events["jet_pfcand_track_vx"][i])
         vy = ak.to_list(events["jet_pfcand_track_vy"][i])
         vz = ak.to_list(events["jet_pfcand_track_vz"][i])
@@ -30,8 +37,11 @@ def debug_print(events):
         print(f"  eta: {eta:.2f}")
         print(f"  phi: {phi:.2f}")
         print(f"  nPFCand: {len(vx)}")
-        print(f"  track_vx: {vx[:]}")
         print(f"  pfCand_ID: {pid[:]}")
+        print(f"  pfCand_pt: {cand_pt[:]}")
+        print(f"  pfCand_eta: {cand_eta[:]}")
+        print(f"  pfCand_phi: {cand_phi[:]}")
+        print(f"  track_vx: {vx[:]}")
         print(f"  track_vy: {vy[:]}")
         print(f"  track_vz: {vz[:]}")
         print(f"  track_dxy: {dxy[:]}")
@@ -46,6 +56,7 @@ def forge_h5(
     out_path: str,
     tree_name: str,
     num_constituents: int = 10,
+    train_split: float = 0.8,
 ):
     """
     Processes a ROOT file containing jet and constituent information and saves the output in HDF5 format.
@@ -68,14 +79,28 @@ def forge_h5(
         f"{root_path}:{tree_name}", schemaclass=BaseSchema
     ).events()
 
-    # Debug print to show first 5 jets
-    debug_print(events)
+    # Debug print to show first N jets
+    if DEBUG:
+        debug_print(events, 2)
 
     # Pad to fixed length num_constituents per jet using 0 (NJets, NConstituents)
     pid = pad_and_fill(events["jet_pfcand_id"], num_constituents)
+    pt = pad_and_fill(events["jet_pfcand_pt_phys"], num_constituents)
+    eta = pad_and_fill(events["jet_pfcand_eta_phys"], num_constituents)
+    phi = pad_and_fill(events["jet_pfcand_phi_phys"], num_constituents)
     vx = pad_and_fill(events["jet_pfcand_track_vx"], num_constituents)
     vy = pad_and_fill(events["jet_pfcand_track_vy"], num_constituents)
     vz = pad_and_fill(events["jet_pfcand_track_vz"], num_constituents)
+
+    # keep track of dummy entries
+    mask = np.abs(pt) > 1e-6
+
+    # Normalize to jet-level quantities
+    rel_pt = pt / events["jet_pt_phys"][..., None]
+    rel_eta = eta - events["jet_eta_phys"][..., None]
+    rel_phi = delta_phi(phi, events["jet_phi_phys"][..., None])
+    rel_eta = ak.where(mask, rel_eta, 0.0)
+    rel_phi = ak.where(mask, rel_phi, 0.0)
 
     # massage the pid array to be flat and do the one-hot encoding
     flat_pid = ak.to_numpy(pid).reshape(-1)
@@ -84,15 +109,51 @@ def forge_h5(
 
     # shape: (n_jets, n_cands,n_features)
     constituents = ak.concatenate(
-        [one_hot, vx[..., None], vy[..., None], vz[..., None]], axis=-1
+        [
+            one_hot,
+            rel_pt[..., None],
+            rel_eta[..., None],
+            rel_phi[..., None],
+            vx[..., None],
+            vy[..., None],
+            vz[..., None],
+        ],
+        axis=-1,
     )
     # Reshape to (n_jets, n_cands * n_features)
     flat = ak.to_numpy(constituents).reshape(len(vx), -1)
 
+    # split dataset into a training and a testing set
+    # Shuffle the data
+    n_total = flat.shape[0]
+    indices = np.arange(n_total)
+    np.random.shuffle(indices)
+
+    # Split into training and testing sets
+    train_size = int(train_split * n_total)
+    train_indices = indices[:train_size]
+    test_indices = indices[train_size:]
+
+    train_data = flat[train_indices]
+    test_data = flat[test_indices]
+
+    print(f"\nFinal array shape before splitting: {flat.shape}")
+    print(f"Final array shape for test data: {test_data.shape}")
+    print(f"Final array shape for train data: {train_data.shape}")
+    print(f"Total jets: {flat.shape[0]}")
     # Save to HDF5
-    with h5py.File(out_path, "w") as f:
+    out_path_h5 = os.path.join(out_path, "jet_data.h5")
+    with h5py.File(out_path_h5, "w") as f:
         f.create_dataset("jet_constituents", data=flat)
 
-    print(f"\nSaved {flat.shape[0]} jets to {out_path}")
+    out_path_h5 = os.path.join(out_path, "train.h5")
+    with h5py.File(out_path_h5, "w") as f:
+        f.create_dataset("jet_constituents", data=train_data)
+
+    out_path_h5 = os.path.join(out_path, "test.h5")
+    with h5py.File(out_path_h5, "w") as f:
+        f.create_dataset("jet_constituents", data=test_data)
+
+    print(f"\nSaved data to {out_path}")
 
     return events

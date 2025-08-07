@@ -5,7 +5,7 @@ import os
 
 if __name__ == "__main__":
     root_path = os.path.join(config.PROJECT_ROOT, "jetTuple_extended_5.root")
-    out_path = os.path.join(config.PROJECT_ROOT, "data/jet_data.h5")
+    out_path = os.path.join(config.PROJECT_ROOT, "data/")
     tree_name = "outnano/Jets"
 
     events = forge_h5(root_path=root_path, out_path=out_path, tree_name=tree_name)
