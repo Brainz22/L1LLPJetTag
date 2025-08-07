@@ -12,6 +12,8 @@ dependencies:
   - notebook
   - python=3.10
   - numpy=1.24
+  - tqdm
+  - h5py
   - pytest
   - black=24.4.2
   - ruff=0.4.6
