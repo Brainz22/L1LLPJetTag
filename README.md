@@ -1,5 +1,43 @@
 # MyProject
 
+## Project Structure
+```bash
+
+.
+|-- README.md
+|-- data
+|-- environment.yml
+|-- pyproject.toml
+|-- pytest.ini
+|-- scripts
+|   |-- run_analysis.py
+|   |-- run_dataForge.py
+|   `-- run_train.py
+|-- src
+|   `-- L1LLPJetTagger
+|       |-- __init__.py
+|       |-- core.py
+|       |-- dataForge.py
+|       |-- explore_root.ipynb
+|       |-- model
+|       |   `-- __init__.py
+|       |-- plotting
+|       |   |-- __init__.py
+|       |   `-- histo.py
+|       |-- processor.py
+|       |-- training
+|       |   `-- __init__.py
+|       `-- utils
+|           |-- __init__.py
+|           |-- config.py
+|           |-- kinematics.py
+|           `-- utils.py
+`-- tests
+    `-- test_core.py
+
+```
+
+
 Example Python project structure with CI and conda environment.
 
 ```bash
