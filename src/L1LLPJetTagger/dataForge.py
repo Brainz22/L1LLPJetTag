@@ -142,10 +142,11 @@ def forge_h5(
     print(f"Final array shape for test data: {test_data.shape}")
     print(f"Final array shape for train data: {train_data.shape}")
     print(f"Total jets: {flat.shape[0]}")
+
     # Save to HDF5
     out_path_h5 = os.path.join(out_path, data_type + "_jet_data.h5")
     with h5py.File(out_path_h5, "w") as f:
-        f.create_dataset("jet_constituents", data=flat)
+        f.create_dataset("jet_data", data=flat)
 
     out_path_h5 = os.path.join(out_path, data_type + "_train.h5")
     with h5py.File(out_path_h5, "w") as f:
