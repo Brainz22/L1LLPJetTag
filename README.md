@@ -13,20 +13,15 @@
 |   `-- run_train.py
 |-- src
 |   `-- L1LLPJetTagger
-|       |-- __init__.py
 |       |-- core.py
 |       |-- dataForge.py
 |       |-- explore_root.ipynb
 |       |-- model
-|       |   `-- __init__.py
 |       |-- plotting
-|       |   |-- __init__.py
 |       |   `-- histo.py
 |       |-- processor.py
 |       |-- training
-|       |   `-- __init__.py
 |       `-- utils
-|           |-- __init__.py
 |           |-- config.py
 |           |-- kinematics.py
 |           `-- utils.py
