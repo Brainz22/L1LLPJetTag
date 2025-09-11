@@ -2,9 +2,7 @@
 
 ## Project Structure
 ```bash
-
 .
-|-- README.md
 |-- data
 |-- environment.yml
 |-- pyproject.toml
@@ -34,7 +32,6 @@
 |           `-- utils.py
 `-- tests
     `-- test_core.py
-
 ```
 
 
