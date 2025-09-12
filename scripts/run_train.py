@@ -2,6 +2,7 @@ import argparse
 import os
 from L1LLPJetTagger.utils.config import config
 from L1LLPJetTagger.utils.loader import load_data
+from L1LLPJetTagger.utils.process_data_llp import combine_and_shuffle_data
 
 
 def main():
@@ -42,6 +43,13 @@ def main():
     print("Signal jet data shape:", sig_meta.shape)
     print("Background data shape:", bkg.shape)
     print("Background jet data shape:", bkg_meta.shape)
+
+    # Combine and shuffle data
+    X, y, combined_jet_data = combine_and_shuffle_data(signal, sig_meta, bkg, bkg_meta)
+
+    print("Combined data shape:", X.shape)
+    print("Combined labels shape:", y.shape)
+    print("Combined jet data shape:", combined_jet_data.shape)
 
 
 if __name__ == "__main__":
