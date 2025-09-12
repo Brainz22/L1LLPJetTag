@@ -23,11 +23,7 @@ def parse_args():
         "-t", "--tree", type=str, default="outnano/Jets", help="Tree name in ROOT file"
     )
     parser.add_argument(
-        "-d",
-        "--data_type",
-        type=str,
-        default="DY",
-        help="Data type: BkgProc or Sig",
+        "-d", "--data_type", type=str, default="DY", help="Data type: BkgProc or Sig"
     )
     return parser.parse_args()
 
