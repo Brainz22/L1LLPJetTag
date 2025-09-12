@@ -75,6 +75,12 @@ def forge_h5(
     """
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
 
+    # Assign label: 1 for signal, 0 for background
+    if data_type.lower().startswith("sig"):
+        label = 1
+    else:
+        label = 0
+
     # Load NanoEvents using BaseSchema for custom structure
     events = NanoEventsFactory.from_root(
         f"{root_path}:{tree_name}", schemaclass=BaseSchema
@@ -123,6 +129,10 @@ def forge_h5(
     )
     # Reshape to (n_jets, n_cands * n_features)
     flat = ak.to_numpy(constituents).reshape(len(vx), -1)
+
+    # Append label as the last column
+    labels = np.full((flat.shape[0], 1), label, dtype=np.float32)
+    flat = np.concatenate((flat, labels), axis=1)
 
     # split dataset into a training and a testing set randomly
     # Shuffle the data for randomness
