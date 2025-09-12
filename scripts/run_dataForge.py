@@ -1,16 +1,53 @@
+"""
+Sample command
+python scripts/run_dataForge.py -i jetTuple_extended_5.root -d Test -t outnano/Jets -o /uscms/home/ddiaz/nobackup/L1LLPJetTagger/data/
+"""
+
 from L1LLPJetTagger.dataForge import forge_h5
 from L1LLPJetTagger.utils.config import config
 
-import os
+import argparse
+from pathlib import Path
+
+
+def parse_args():
+    prj = config.PROJECT_ROOT
+    parser = argparse.ArgumentParser(prog="run_dataForge")
+    parser.add_argument(
+        "-i", "--input", type=Path, default=prj / "DY_1k.root", help="Input ROOT file"
+    )
+    parser.add_argument(
+        "-o", "--out", type=Path, default=prj / "data/", help="Output directory"
+    )
+    parser.add_argument(
+        "-t", "--tree", type=str, default="outnano/Jets", help="Tree name in ROOT file"
+    )
+    parser.add_argument(
+        "-d",
+        "--data_type",
+        type=str,
+        default="DY",
+        help="Data type: Bkg Process or Sig",
+    )
+    return parser.parse_args()
+
+
+def main():
+    args = parse_args()
+    if not args.input.exists():
+        raise FileNotFoundError(f"Input ROOT file {args.input} does not exist.")
+    args.out.mkdir(parents=True, exist_ok=True)
+    print(
+        f"\nRunning dataForge on: {args.input}, outputting to: {args.out}, tree: {args.tree}, data_type: {args.data_type}"
+    )
+    events = forge_h5(
+        root_path=str(args.input),
+        out_path=str(args.out),
+        tree_name=str(args.tree),
+        data_type=str(args.data_type),
+    )
+    return events
+
 
 if __name__ == "__main__":
-    root_path = os.path.join(config.PROJECT_ROOT, "DY_1k.root")
-    # root_path = os.path.join(config.PROJECT_ROOT, "jetTuple_extended_5.root")
-    out_path = os.path.join(config.PROJECT_ROOT, "data/")
-    tree_name = "outnano/Jets"
-    data_type = "DY"
-    # data_type = "Sig"
-
-    events = forge_h5(
-        root_path=root_path, out_path=out_path, tree_name=tree_name, data_type=data_type
-    )
+    main()
