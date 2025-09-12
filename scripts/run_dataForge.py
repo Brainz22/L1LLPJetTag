@@ -27,7 +27,7 @@ def parse_args():
         "--data_type",
         type=str,
         default="DY",
-        help="Data type: Bkg Process or Sig",
+        help="Data type: BkgProcess or Sig",
     )
     return parser.parse_args()
 
