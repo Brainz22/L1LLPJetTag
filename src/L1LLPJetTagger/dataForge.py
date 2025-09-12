@@ -124,8 +124,8 @@ def forge_h5(
     # Reshape to (n_jets, n_cands * n_features)
     flat = ak.to_numpy(constituents).reshape(len(vx), -1)
 
-    # split dataset into a training and a testing set
-    # Shuffle the data
+    # split dataset into a training and a testing set randomly
+    # Shuffle the data for randomness
     n_total = flat.shape[0]
     indices = np.arange(n_total)
     np.random.shuffle(indices)
