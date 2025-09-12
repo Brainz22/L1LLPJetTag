@@ -18,6 +18,10 @@ class _Config:
     def N_FEAT(self):
         return 14
 
+    @property
+    def CHUNK_SIZE(self):
+        return 100_000
+
     def __setattr__(self, name, value):
         raise AttributeError(f"Cannot modify constant '{name}'")
 
