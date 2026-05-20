@@ -118,12 +118,12 @@ def forge_h5(
     constituents = ak.concatenate(
         [
             one_hot,
-            rel_pt[..., None],
-            rel_eta[..., None],
-            rel_phi[..., None],
+            vz[..., None],
             vx[..., None],
             vy[..., None],
-            vz[..., None],
+            rel_pt[..., None],
+            rel_eta[..., None],
+            rel_phi[..., None]
         ],
         axis=-1,
     )
@@ -133,6 +133,20 @@ def forge_h5(
     # Append label as the last column
     labels = np.full((flat.shape[0], 1), label, dtype=np.float32)
     flat = np.concatenate((flat, labels), axis=1)
+    jetData = ak.concatenate((events["jet_pt_phys"][...,None], events["jet_eta_phys"][..., None], \
+                events["jet_phi_phys"][..., None], events["jet_mass"][..., None] ), axis=-1)
+    jetData = ak.to_numpy(jetData)
+
+    #select only jets with LLP_daughter matched to an sc jet
+    if data_type.lower().startswith("sig"):
+        print("=======Removing background jets from signal sample =============")
+        print("Initial shape: ", flat.shape)
+        mask = ak.to_numpy(events["jet_doesmatch_genLLPDecay"])
+        flat = flat[mask]
+        jetData = jetData[mask]
+        print("\n********* Removing done ********* \n")
+        print("Final shape: ", flat.shape)
+    else: print("\n =====Not removing any jets. Working with background sample======= \n")
 
     # split dataset into a training and a testing set randomly
     # Shuffle the data for randomness
@@ -146,11 +160,16 @@ def forge_h5(
     test_indices = indices[train_size:]
 
     train_data = flat[train_indices]
+    train_jetData = jetData[train_indices]
+
     test_data = flat[test_indices]
+    test_jetData = jetData[test_indices]
 
     print(f"\nFinal array shape before splitting: {flat.shape}")
     print(f"Final array shape for test data: {test_data.shape}")
     print(f"Final array shape for train data: {train_data.shape}")
+    print(f"Final array shape for jet-level train data: {train_jetData.shape}")
+    print(f"Final array shape for jet-level test data: {test_jetData.shape}")
     print(f"Total jets: {flat.shape[0]}")
 
     created_files = []
@@ -160,9 +179,19 @@ def forge_h5(
         f.create_dataset("jet_data", data=flat)
     created_files.append(out_path_h5)
 
+    out_path_h5 = os.path.join(out_path, data_type + "_trainJets.h5")
+    with h5py.File(out_path_h5, "w") as f:
+        f.create_dataset("train_jet_data", data=train_jetData)
+    created_files.append(out_path_h5)
+
     out_path_h5 = os.path.join(out_path, data_type + "_train.h5")
     with h5py.File(out_path_h5, "w") as f:
         f.create_dataset("jet_constituents", data=train_data)
+    created_files.append(out_path_h5)
+
+    out_path_h5 = os.path.join(out_path, data_type + "_testJets.h5")
+    with h5py.File(out_path_h5, "w") as f:
+        f.create_dataset("test_jet_data", data=test_jetData)
     created_files.append(out_path_h5)
 
     out_path_h5 = os.path.join(out_path, data_type + "_test.h5")

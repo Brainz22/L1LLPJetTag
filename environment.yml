@@ -1,4 +1,4 @@
-name: L1LLPJetTagger
+name: dataForger
 channels:
   - conda-forge
 dependencies:
