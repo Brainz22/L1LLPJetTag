@@ -59,7 +59,7 @@ def forge_h5(
     tree_name: str,
     data_type: str = "UNKNOWN",
     num_constituents: int = 10,
-    train_split: float = 0.8,
+    train_split: float = 0.6,
 ):
     """
     Processes a ROOT file containing jet and constituent information and saves the output in HDF5 format.
@@ -159,14 +159,25 @@ def forge_h5(
 
     #select only jets with LLP_daughter matched to an sc jet
     if data_type.lower().startswith("sig"):
-        print("=======Removing background jets from signal sample =============")
+        print("======================================")
+        print("Removing background jets from signal sample and applying eta cut (< abs(2.4))" )
         print("Initial shape: ", flat.shape)
-        mask = ak.to_numpy(events["jet_doesmatch_genLLPDecay"])
+        mask = (events["jet_doesmatch_genLLPDecay"][...]) & (np.abs(events["jet_eta_phys"][...]) < 2.4)
         flat = flat[mask]
         jetData = jetData[mask]
         print("\n********* Removing done ********* \n")
         print("Final shape: ", flat.shape)
-    else: print("\n =====Not removing any jets. Working with background sample======= \n")
+        print("======================================")
+    else: 
+        print("===================================")
+        print("Working with background sample. Only applying eta cut (< abs(2.4))")
+        mask = np.abs(events["jet_eta_phys"][...]) < 2.4
+        flat = flat[mask]
+        jetData = jetData[mask]
+        print("\n********* Removing done ********* \n")
+        print("Final shape: ", flat.shape)
+        print("===================================")
+    
 
     # split dataset into a training and a testing set randomly
     # Shuffle the data for randomness
@@ -204,26 +215,31 @@ def forge_h5(
     out_path_h5 = os.path.join(out_path, data_type + "_jet_data.h5")
     with h5py.File(out_path_h5, "w") as f:
         f.create_dataset("jet_data", data=flat)
+    f.close()
     created_files.append(out_path_h5)
 
     out_path_h5 = os.path.join(out_path, data_type + "_trainJets.h5")
     with h5py.File(out_path_h5, "w") as f:
         f.create_dataset("train_jet_data", data=train_jetData)
+    f.close()
     created_files.append(out_path_h5)
 
     out_path_h5 = os.path.join(out_path, data_type + "_train.h5")
     with h5py.File(out_path_h5, "w") as f:
         f.create_dataset("jet_constituents", data=train_data)
+    f.close()
     created_files.append(out_path_h5)
 
     out_path_h5 = os.path.join(out_path, data_type + "_testJets.h5")
     with h5py.File(out_path_h5, "w") as f:
         f.create_dataset("test_jet_data", data=test_jetData)
+    f.close()
     created_files.append(out_path_h5)
 
     out_path_h5 = os.path.join(out_path, data_type + "_test.h5")
     with h5py.File(out_path_h5, "w") as f:
         f.create_dataset("jet_constituents", data=test_data)
+    f.close()
     created_files.append(out_path_h5)
 
     for f in created_files:
