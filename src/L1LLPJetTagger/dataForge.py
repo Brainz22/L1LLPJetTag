@@ -7,7 +7,7 @@ from L1LLPJetTagger.utils.config import config
 from coffea.nanoevents import NanoEventsFactory, BaseSchema
 import awkward as ak
 import h5py
-import os
+import os, glob, sys
 
 DEBUG = False
 
@@ -53,6 +53,7 @@ def debug_print(events, num_jets=5):
 
 def forge_h5(
     root_path: str,
+    sample_flavor: str,
     out_path: str,
     tree_name: str,
     data_type: str = "UNKNOWN",
@@ -67,6 +68,7 @@ def forge_h5(
 
     Args:
         root_path (str): Path to the input ROOT file.
+        sample_flavor (str): Folder name where the sample roots files exist.
         out_path (str): Path to the output HDF5 file.
         tree_name (str): Name of the TTree in the ROOT file to process.
 
@@ -81,10 +83,27 @@ def forge_h5(
     else:
         label = 0
 
+    fpaths = glob.glob(os.path.join(root_path, sample_flavor, "**/*.root"), recursive=True)
+    print(f"========================================================")
+    print(f"Check first path: {fpaths[0]}")
+    print(f"\nFound {len(fpaths)} files")
+    print(f"=========================================================")
+
+    #sys.exit(0)
     # Load NanoEvents using BaseSchema for custom structure
-    events = NanoEventsFactory.from_root(
-        f"{root_path}:{tree_name}", schemaclass=BaseSchema
-    ).events()
+    # events = NanoEventsFactory.from_root(
+    #     f"{root_path}:{tree_name}", schemaclass=BaseSchema
+    # ).events()
+
+    print("Beginning tree reading *******************")
+
+    events = ak.concatenate([NanoEventsFactory.from_root(
+                {f: tree_name},
+                #entry_stop=1000,
+                schemaclass=BaseSchema
+            ).events()
+        for f in fpaths[:]
+    ])
 
     # Debug print to show first N jets
     if DEBUG:

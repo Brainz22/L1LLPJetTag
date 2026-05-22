@@ -1,6 +1,6 @@
 """
 Sample command
-python scripts/run_dataForge.py -i jetTuple_extended_5.root -d Test -t outnano/Jets -o /uscms/home/ddiaz/nobackup/L1LLPJetTagger/data/
+python scripts/run_dataForge.py -i jetTuple_extended_5.root -s sample=HiddenGluGluH_mH125_Phi15_ctau1000_cccc_PU200 -d Test -t outnano/Jets -o /uscms/home/ddiaz/nobackup/L1LLPJetTagger/data/
 """
 
 from L1LLPJetTagger.dataForge import forge_h5
@@ -17,6 +17,9 @@ def parse_args():
         "-i", "--input", type=Path, default=prj / "DY_1k.root", help="Input ROOT file"
     )
     parser.add_argument(
+        "-s", "--sample", type=Path, help="Sample type folder where files are, e.g. HiddenGluGluH_mH125_Phi15_ctau1000_cccc_PU200."
+    )
+    parser.add_argument(
         "-o", "--out", type=Path, default=prj / "data/", help="Output directory"
     )
     parser.add_argument(
@@ -30,14 +33,15 @@ def parse_args():
 
 def main():
     args = parse_args()
-    if not args.input.exists():
+    if not args.input.is_dir():
         raise FileNotFoundError(f"Input ROOT file {args.input} does not exist.")
     args.out.mkdir(parents=True, exist_ok=True)
     print(
-        f"\nRunning dataForge on: {args.input}, outputting to: {args.out}, tree: {args.tree}, data_type: {args.data_type}"
+        f"\nRunning dataForge on: {args.input}/{args.sample}, outputting to: {args.out}, tree: {args.tree}, data_type: {args.data_type}"
     )
     events = forge_h5(
         root_path=str(args.input),
+        sample_flavor=str(args.sample),
         out_path=str(args.out),
         tree_name=str(args.tree),
         data_type=str(args.data_type),
