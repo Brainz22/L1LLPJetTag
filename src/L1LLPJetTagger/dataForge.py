@@ -8,6 +8,7 @@ from coffea.nanoevents import NanoEventsFactory, BaseSchema
 import awkward as ak
 import h5py
 import os, glob, sys
+from pathlib import Path
 
 DEBUG = False
 
@@ -190,6 +191,13 @@ def forge_h5(
     print(f"Final array shape for jet-level train data: {train_jetData.shape}")
     print(f"Final array shape for jet-level test data: {test_jetData.shape}")
     print(f"Total jets: {flat.shape[0]}")
+    
+    ## append final number of jets to file
+    log_path = Path(__file__).parent.parent.parent / "data" / "forge_log.txt"
+    with open(log_path, "a") as f:
+        f.write(f"{sample_flavor} Total jets: {flat.shape[0]} \n")
+        print("Logged.\n")
+
 
     created_files = []
     # Save to HDF5
