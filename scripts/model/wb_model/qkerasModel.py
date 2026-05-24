@@ -32,6 +32,7 @@ SWEEP_CONFIG = {
         "filters":            {"values": [8, 10, 16, 32]},
         "dense_units":        {"values": [8, 10, 16, 32]},
         "n_conv_layers":      {"values": [1, 2, 3]},
+        "n_dense_layers":     {"values": [1, 2, 3]},
         # Quantization — too few bits is a common cause of high loss
         "total_bits":         {"values": [6, 8, 10, 12]},
         # Regularization
@@ -76,23 +77,28 @@ def build_model(config):
         x = QActivation(activation=q_relu, name=f"q_activation_{i}")(x)
 
     x = GlobalAveragePooling1D(name="global_average_pooling1d")(x)
+    
+    for i in range(config.n_dense_layers):
+
+        x = QDense(
+            dense_units,
+            kernel_quantizer=q_kernel, bias_quantizer=q_kernel,
+            kernel_initializer="lecun_uniform",
+            kernel_regularizer=l1(reg), bias_regularizer=l1(reg),
+            name=f"q_dense_{i}",
+        )(x)
+
+        x = QActivation(activation=q_relu, name=f"q_activation_dense_{i}")(x)
 
     x = QDense(
-        dense_units,
-        kernel_quantizer=q_kernel, bias_quantizer=q_kernel,
-        kernel_initializer="lecun_uniform",
-        kernel_regularizer=l1(reg), bias_regularizer=l1(reg),
-        name="q_dense",
-    )(x)
-    x = QActivation(activation=q_relu, name="q_activation_dense")(x)
-
-    outputs = QDense(
         1,
         kernel_quantizer=q_kernel, bias_quantizer=q_kernel,
         kernel_initializer="lecun_uniform",
         kernel_regularizer=l1(reg), bias_regularizer=l1(reg),
-        name="q_dense_1",
+        name="q_dense_o",
     )(x)
+    #outputs = QActivation(activation="smooth_sigmoid", name="sigmoid")(x)
+    outputs = Activation("sigmoid")(x)
 
     model = Model(inputs=inputs, outputs=outputs, name="model")
 
@@ -106,7 +112,7 @@ def build_model(config):
     )
 
     model.compile(
-        loss=tensorflow.keras.losses.BinaryCrossentropy(from_logits=True),
+        loss=tensorflow.keras.losses.BinaryCrossentropy(from_logits=False),
         optimizer=tensorflow.keras.optimizers.Adam(
             learning_rate=config.learning_rate,
             beta_1=config.momentum,
@@ -122,8 +128,11 @@ def train_sweep():
 
         model = build_model(config)
 
+        plot_model(model, to_file="model.png", show_shapes=True, show_layer_names=True)
+        wandb.log({"model_architecture": wandb.Image("model.png")})
+
         callbacks = [
-            tensorflow.keras.callbacks.EarlyStopping(monitor="val_loss", patience=65, verbose=1),
+            tensorflow.keras.callbacks.EarlyStopping(monitor="val_loss", patience=25, verbose=1),
             pruning_callbacks.UpdatePruningStep(),
             tensorflow.keras.callbacks.ReduceLROnPlateau(
                 monitor="val_loss",
@@ -137,6 +146,7 @@ def train_sweep():
         model.fit(
             _data["X"], _data["y"],
             epochs=config.epochs,
+            #epochs = 1,
             batch_size=config.batch_size,
             verbose=2,
             sample_weight=np.asarray(_data["weights"]),
@@ -177,6 +187,11 @@ def main(args):
     X = dataset[:, 0 : len(dataset[0]) - 1]
     y = dataset[:, len(dataset[0]) - 1]
     X = X.reshape((X.shape[0], N_PART_PER_JET, N_FEAT))
+
+    print("====================================================")
+    print("Number of bkg jets: ", len(X[y==0]))
+    print("Number of signal jets: ", len(X[y==1]))
+    print("====================================================")
 
     normalizeIPs = False
     norm_b4 = max(X[:, :, 8].ravel()) < 2.0
