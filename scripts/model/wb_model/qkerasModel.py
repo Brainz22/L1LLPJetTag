@@ -97,7 +97,8 @@ def build_model(config):
         kernel_regularizer=l1(reg), bias_regularizer=l1(reg),
         name="q_dense_o",
     )(x)
-    #outputs = QActivation(activation="smooth_sigmoid", name="sigmoid")(x)
+    #x = QActivation(activation="smooth_sigmoid", name="s_sigmoid")(x)
+    #outputs = QActivation(activation=quantized_bits(tb, 1, alpha=1, keep_negative=False), name="q_sigmoid")(x)
     outputs = Activation("sigmoid")(x)
 
     model = Model(inputs=inputs, outputs=outputs, name="model")
@@ -118,6 +119,7 @@ def build_model(config):
             beta_1=config.momentum,
         ),
         metrics=["binary_accuracy"],
+        #weighted_metrics=[tensorflow.keras.metrics.AUC(name="auc")]
     )
     return model
 
