@@ -90,7 +90,7 @@ def build_model(config):
 
         x = QActivation(activation=q_relu, name=f"q_activation_dense_{i}")(x)
 
-    x = QDense(
+    outputs = QDense(
         1,
         kernel_quantizer=q_kernel, bias_quantizer=q_kernel,
         kernel_initializer="lecun_uniform",
@@ -99,7 +99,7 @@ def build_model(config):
     )(x)
     #x = QActivation(activation="smooth_sigmoid", name="s_sigmoid")(x)
     #outputs = QActivation(activation=quantized_bits(tb, 1, alpha=1, keep_negative=False), name="q_sigmoid")(x)
-    outputs = Activation("sigmoid")(x)
+    #outputs = Activation("sigmoid")(x)
 
     model = Model(inputs=inputs, outputs=outputs, name="model")
 
@@ -113,13 +113,13 @@ def build_model(config):
     )
 
     model.compile(
-        loss=tensorflow.keras.losses.BinaryCrossentropy(from_logits=False),
+        loss=tensorflow.keras.losses.BinaryCrossentropy(from_logits=True),
         optimizer=tensorflow.keras.optimizers.Adam(
             learning_rate=config.learning_rate,
             beta_1=config.momentum,
         ),
         metrics=["binary_accuracy"],
-        #weighted_metrics=[tensorflow.keras.metrics.AUC(name="auc")]
+        weighted_metrics=[tensorflow.keras.metrics.AUC(name="auc")]
     )
     return model
 
