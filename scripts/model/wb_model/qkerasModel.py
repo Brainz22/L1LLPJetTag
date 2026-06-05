@@ -7,6 +7,9 @@ from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Input, GlobalAveragePooling1D
 from qkeras import *
 from tensorflow.keras.regularizers import l1
+
+from inputFixer import add_ip
+
 import wandb
 from wandb.integration.keras import WandbMetricsLogger
 
@@ -18,7 +21,7 @@ from tensorflow.keras.utils import plot_model
 import tensorflow_model_optimization as tfmot
 from sklearn.preprocessing import MinMaxScaler
 
-N_FEAT = 14
+N_FEAT = 13
 N_PART_PER_JET = 10
 
 # Loaded once in main(), reused across all sweep trials
@@ -130,6 +133,8 @@ def train_sweep():
 
         model = build_model(config)
 
+        model.summary()
+
         plot_model(model, to_file="model.png", show_shapes=True, show_layer_names=True)
         wandb.log({"model_architecture": wandb.Image("model.png")})
 
@@ -186,9 +191,20 @@ def main(args):
     dataset    = fullData[:, 0:141]
     sampleData = fullData[:, 141:]
 
+    old_N_FEAT = 14
     X = dataset[:, 0 : len(dataset[0]) - 1]
     y = dataset[:, len(dataset[0]) - 1]
-    X = X.reshape((X.shape[0], N_PART_PER_JET, N_FEAT))
+    X = X.reshape((X.shape[0], N_PART_PER_JET, old_N_FEAT)) #STILL 14 feats
+
+    #change inputs to 13 feats
+    X = add_ip(X) #add ip as feature instead of separate dx and dy features
+
+    # select jets with pT > 1 GeV
+    mask = sampleData[:, 0] > 20
+    sampleData = sampleData[mask]
+    y = y[mask]
+    X = X[mask]
+
 
     print("====================================================")
     print("Number of bkg jets: ", len(X[y==0]))
@@ -211,17 +227,17 @@ def main(args):
     else:
         tag = "noNorm/noNorm_train"
 
-    thebins    = np.linspace(0, max(sampleData[:, 0]), 60)
-    bkgPts     = sampleData[y == 0][:, 0]
-    sigPts     = sampleData[y == 1][:, 0]
+    thebins = np.linspace(min(np.log(sampleData[:, 0])), max(np.log(sampleData[:, 0])), 101) # check for right range
+    bkgPts = np.log(sampleData[y==0][:,0])
+    sigPts = np.log(sampleData[y==1][:,0])
     bkg_counts, _ = np.histogram(bkgPts, bins=thebins)
     sig_counts, _ = np.histogram(sigPts, bins=thebins)
-    total_bkg  = len(bkgPts)
+    total_bkg = len(bkgPts)
     total_sig  = len(sigPts)
-    weights_pt = np.nan_to_num(sig_counts / bkg_counts, nan=total_sig / total_bkg)
+    weights_pt = np.nan_to_num((sig_counts + 0.5) / (bkg_counts + 0.5), nan=total_sig / total_bkg)
 
     weights     = np.ones(len(y))
-    pt_indicies = np.clip(np.digitize(sampleData[:, 0], bins=thebins) - 1, 0, len(weights_pt) - 1)
+    pt_indicies = np.clip(np.digitize(np.log(sampleData[:, 0]), bins=thebins) - 1, 0, len(weights_pt) - 1)
     weights[y == 0] = weights_pt[pt_indicies][y == 0]
 
     _data["X"]       = X
