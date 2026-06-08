@@ -7,8 +7,10 @@ from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Input, GlobalAveragePooling1D
 from qkeras import *
 from tensorflow.keras.regularizers import l1
+from sklearn.utils.class_weight import compute_class_weight
 
 from inputFixer import add_ip
+
 
 import wandb
 from wandb.integration.keras import WandbMetricsLogger
@@ -157,6 +159,7 @@ def train_sweep():
             batch_size=config.batch_size,
             verbose=2,
             sample_weight=np.asarray(_data["weights"]),
+            class_weight = _data["class_Weights"],
             validation_split=0.20,
             callbacks=callbacks,
         )
@@ -238,18 +241,33 @@ def main(args):
 
     weights     = np.ones(len(y))
     pt_indicies = np.clip(np.digitize(np.log(sampleData[:, 0]), bins=thebins) - 1, 0, len(weights_pt) - 1)
-    weights[y == 0] = weights_pt[pt_indicies][y == 0]
+    weights[y == 1] = weights_pt[pt_indicies][y == 1]
+
+    #compute class weights
+    classes = np.unique(y)
+    cl_weights = compute_class_weight(class_weight='balanced', classes=classes, y=y)
+    class_weight_dict = dict(zip(classes, cl_weights)) #required by keras
 
     _data["X"]       = X
     _data["y"]       = y
     _data["weights"] = weights
+    _data["class_Weights"] = class_weight_dict
 
     sweep_id = wandb.sweep(SWEEP_CONFIG, project="L1LLPJetTag")
     wandb.agent(sweep_id, function=train_sweep, count=args.n_trials)
 
+#=============================================
+
+def sanity_check():
+    return None
+
+
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process arguments")
+
+    parser.add_argument("--sanity", action="store_true", help="Do sanity checks.")
     parser.add_argument("SignalTrainFile",       type=str)
     parser.add_argument("BkgTrainFile",          type=str)
     parser.add_argument("sig_jetData_TrainFile", type=str)
@@ -257,4 +275,8 @@ if __name__ == "__main__":
     parser.add_argument("llpType",               type=str)
     parser.add_argument("--n_trials", type=int, default=30, help="Number of sweep trials")
     args = parser.parse_args()
-    main(args)
+
+    if args.sanity:
+        sanity_check()
+    else:
+        main(args)
